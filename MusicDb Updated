@@ -1,4 +1,4 @@
-// Data/MusicDbContext.cs
+// Data/MusicDbContext.c
 using Microsoft.EntityFrameworkCore;
 using MusicStreamingAPI.Models;
 
