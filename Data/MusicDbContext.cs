@@ -1,0 +1,67 @@
+// Data/MusicDbContext.cs
+using Microsoft.EntityFrameworkCore;
+using MusicStreamingAPI.Models;
+
+namespace MusicStreamingAPI.Data
+{
+    public class MusicDbContext : DbContext
+    {
+        public MusicDbContext(DbContextOptions<MusicDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<User> Users { get; set; }
+        public DbSet<Track> Tracks { get; set; }
+        public DbSet<Playlist> Playlists { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // User configuration
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Email).IsUnique();
+                entity.HasIndex(e => e.Username).IsUnique();
+                entity.Property(e => e.Email).HasMaxLength(255);
+                entity.Property(e => e.Username).HasMaxLength(100);
+            });
+
+            // Track configuration
+            modelBuilder.Entity<Track>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).HasMaxLength(255);
+                entity.Property(e => e.Artist).HasMaxLength(255);
+                entity.Property(e => e.Album).HasMaxLength(255);
+                
+                // Foreign key to User
+                entity.HasOne(e => e.User)
+                    .WithMany(e => e.Tracks)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Playlist configuration
+            modelBuilder.Entity<Playlist>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(255);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                
+                // Foreign key to User
+                entity.HasOne(e => e.User)
+                    .WithMany(e => e.Playlists)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                    
+                // Many-to-many with tracks
+                entity.HasMany(e => e.Tracks)
+                    .WithMany()
+                    .UsingEntity(
+                        "PlaylistTrack",
+                        l => l.HasOne(typeof(Track)).WithMany().HasForeignKey("TrackId"),
+                        r => r.HasOne(typeof(Playlist)).WithMany().HasForeignKey("PlaylistId"));
+            });
+        }
+    }
+}
